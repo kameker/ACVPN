@@ -1,0 +1,2 @@
+const test=require('node:test');const assert=require('node:assert/strict');const {refreshSubscriptions}=require('../src/refresh-subscriptions');
+test('refreshes every subscription and reports partial failures',async()=>{const groups=[{id:'a',url:'https://a'},{id:'manual'},{id:'b',url:'https://b'},{id:'c',url:'https://c'}],called=[];const result=await refreshSubscriptions(groups,async group=>{called.push(group.id);if(group.id==='b')throw Error('failed')});assert.deepEqual(called,['a','b','c']);assert.deepEqual(result,{updated:2,failed:1});});

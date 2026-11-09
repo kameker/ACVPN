@@ -1,0 +1,2 @@
+const test=require('node:test');const assert=require('node:assert/strict');const {tunPreflight}=require('../src/tun-preflight');
+test('TUN preflight handles privileges and an existing adapter without changing them',()=>{assert.deepEqual(tunPreflight(()=>({status:0,stdout:'{"administrator":false,"adapterNameInUse":true}'})),{administrator:false,adapterNameInUse:true});assert.throws(()=>tunPreflight(()=>({status:1,stdout:''})),/Unable/);assert.throws(()=>tunPreflight(()=>({status:0,stdout:'{}'})),/Invalid/);});

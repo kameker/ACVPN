@@ -1,0 +1,75 @@
+{
+  "name": "acvpn",
+  "version": "1.0.0",
+  "description": "Private local proxy client for Windows",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test",
+    "dist": "electron-builder --win nsis"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "GPL-3.0-or-later",
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^45.2.1",
+    "electron-builder": "^26.18.0",
+    "jsdom": "^29.1.1"
+  },
+  "productName": "ACVPN",
+  "build": {
+    "appId": "app.acvpn.client",
+    "productName": "ACVPN",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "package.json",
+      "LICENSE",
+      "README.md"
+    ],
+    "extraResources": [
+      {
+        "from": "vendor/sing-box.exe",
+        "to": "sing-box.exe"
+      },
+      {
+        "from": "vendor/libcronet.dll",
+        "to": "libcronet.dll"
+      },
+      {
+        "from": "vendor/SING-BOX-LICENSE.txt",
+        "to": "SING-BOX-LICENSE.txt"
+      },
+      {
+        "from": "src/windows-proxy.ps1",
+        "to": "windows-proxy.ps1"
+      },
+      {
+        "from": "src/icon.ico",
+        "to": "app-icon.ico"
+      },
+      {
+        "from": "src/tun-supervisor.ps1",
+        "to": "tun-supervisor.ps1"
+      },
+      {
+        "from": "src/tun-stop.ps1",
+        "to": "tun-stop.ps1"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "src/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "dependencies": {
+    "flag-icons": "^7.6.0"
+  }
+}

@@ -1,0 +1,5 @@
+node_modules/
+dist/
+vendor/unpacked/
+vendor/sing-box.zip
+*.log

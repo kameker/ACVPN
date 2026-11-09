@@ -1,0 +1,13 @@
+const test=require('node:test');const assert=require('node:assert/strict');const {spawn}=require('node:child_process');const {once}=require('node:events');const {stopAndWait,createServerSwitcher}=require('../src/switch-server');
+test('selecting a different server while connected stops, selects and reconnects in order',async()=>{
+ let selected='a',connected=true,switching=false;const events=[];let finishStop;const waitStop=new Promise(r=>finishStop=r);
+ const select=createServerSwitcher({exists:id=>['a','b','c'].includes(id),current:()=>selected,isConnected:()=>connected,isConnecting:()=>false,stop:async()=>{events.push('stop');await waitStop;connected=false;},setSelected:id=>{events.push('select:'+id);selected=id;},start:async()=>{events.push('start');connected=true;},onSwitching:v=>{switching=v;events.push('switching:'+v);}});
+ const action=select('b');assert.equal(switching,true);assert.deepEqual(events,['switching:true','stop']);await assert.rejects(select('c'),/Wait/);assert.equal(selected,'a');finishStop();await action;assert.equal(switching,false);assert.equal(selected,'b');assert.deepEqual(events,['switching:true','stop','select:b','start','switching:false']);
+});
+test('selection while disconnected does not connect and failures clear switching',async()=>{
+ let selected='a',active=false,flag=false,starts=0;const select=createServerSwitcher({exists:id=>id==='a'||id==='b',current:()=>selected,isConnected:()=>active,isConnecting:()=>false,stop:async()=>{throw Error('stop failed');},setSelected:id=>selected=id,start:async()=>starts++,onSwitching:v=>flag=v});
+ await select('b');assert.equal(selected,'b');assert.equal(starts,0);active=true;await assert.rejects(select('a'),/stop failed/);assert.equal(flag,false);assert.equal(selected,'b');await assert.rejects(select('missing'),/Server not found/);
+});
+test('switch waits for the old child process to actually exit',async()=>{const child=spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{stdio:'ignore',windowsHide:true});await once(child,'spawn');await stopAndWait(child,()=>child.kill(),3000);assert.ok(child.exitCode!==null||child.signalCode!==null);});
+
+test('failed new connection remains disconnected and permits another attempt',async()=>{let selected='a',connected=true,flag=false,attempt=0;const select=createServerSwitcher({exists:()=>true,current:()=>selected,isConnected:()=>connected,isConnecting:()=>false,stop:async()=>{connected=false},setSelected:id=>{selected=id},start:async()=>{attempt++;throw Error('new server failed')},onSwitching:v=>flag=v});await assert.rejects(select('b'),/new server failed/);assert.equal(selected,'b');assert.equal(connected,false);assert.equal(flag,false);await select('c');assert.equal(selected,'c');assert.equal(attempt,1);});
