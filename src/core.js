@@ -46,6 +46,7 @@ function parseList(text) {
   if(!/^(vless|vmess|trojan|ss|socks5?):\/\//im.test(body)) body=b64(body).trim();
   const lines=body.split(/\r?\n/).map(x=>x.trim()).filter(Boolean); const servers=[]; let skipped=0;
   for(const line of lines) { try { servers.push(parseLink(line)); } catch { skipped++; } }
+  if(servers.length&&servers.every(s=>/app\s+not\s+supported/i.test(s.name)&&['0.0.0.0','::','127.0.0.1','localhost'].includes(s.server.toLowerCase())))throw Error('Subscription provider does not support this client');
   if(!servers.length) throw Error('No supported configurations found');
   return {servers,skipped};
 }
