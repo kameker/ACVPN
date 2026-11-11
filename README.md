@@ -1,35 +1,58 @@
-# ACVPN для Windows
+# ACVPN for Windows
 
-ACVPN — самостоятельный клиент для **ваших** серверов и подписок. Сервис серверов или подписок ACVPN не предоставляет.
+**English** | [Русский](README.ru.md)
 
-## Быстрый запуск
+ACVPN is a Windows application for connecting to your own servers and subscriptions through a local proxy. ACVPN does not provide servers or subscriptions; obtain them from a provider or set up your own.
 
-Откройте `dist/ACVPN Setup 1.0.2.exe` и установите приложение либо запустите `dist/win-unpacked/ACVPN.exe`. Сборка не подписана сертификатом и Windows может показать предупреждение об издателе.
+## Features
 
-1. Нажмите «Добавить» и вставьте конфигурацию или HTTPS-ссылку подписки.
-2. Выберите сервер и нажмите «Подключить».
-3. По умолчанию ACVPN включает системный прокси Windows после запуска локального прокси. Приложения, которые используют настройки Windows, смогут направлять трафик через выбранный сервер. Не все программы поддерживают системный прокси.
-4. Для отключения нажмите «Отключить» или закройте ACVPN. Прежние настройки прокси восстанавливаются, если их не изменила другая программа.
+- Import individual configurations and HTTPS subscriptions; refresh subscriptions.
+- Search and sort servers, save favorites, and check latency and certificates.
+- Use the Windows system proxy or configure a local HTTP/SOCKS5 proxy manually.
+- Route websites and applications directly, through the proxy, or block them.
+- Automatically check for updates to the installed application.
+- English and Russian interfaces, light and dark themes, and a system tray.
 
-В настройках можно отключить системный режим и указать HTTP или SOCKS5-прокси `127.0.0.1:2080` вручную в нужном приложении.
+## Installation and connection
 
-На главном экране кнопка «Чек пинг» измеряет задержку и проверяет сертификаты серверов. Кнопка «Обновить» обновляет все подписки и сообщает число успешных и неудачных обновлений; перед обновлением необходимо отключиться и дождаться завершения проверки серверов. Звезда добавляет сервер в избранное. При закрытии окна приложение сворачивается в системный трей; для полного выхода используйте меню значка. Автоматического переключения при обрыве нет. В меню трея остаётся действие выбора лучшего сервера с проверенным сертификатом и минимальной измеренной задержкой.
+1. Download and run the installer from [GitHub Releases](https://github.com/kameker/ACVPN/releases). Windows may warn about an unknown publisher when the build is unsigned.
+2. Select **Add** and paste a configuration URI or an HTTPS subscription URL.
+3. Select a server and press the connection button.
+4. Press the button again to disconnect. Closing the window minimizes ACVPN to the system tray; use the tray menu to quit completely.
 
-На главном экране управление соединением и избранное находятся слева, все серверы — справа. По умолчанию включена сортировка по пингу: сверху показываются серверы с измеренной задержкой и проверенным сертификатом либо без обычного TLS-сертификата (включая Reality), а остальные серверы остаются видимыми в отдельной группе ниже. Серверы с проверенным сертификатом всегда показываются раньше серверов без обычного сертификата; внутри каждой группы учитывается задержка. Избранное следует выбранной сортировке; при сортировке по пингу неподходящие для неё избранные серверы остаются в отдельной группе внизу. При выборе другого сервера во время подключения приложение переключается на него. Страна определяется по названию, а не по IP. Управление подписками находится в режиме «По подпискам».
+By default, ACVPN configures the Windows system proxy. Applications that use the system settings can send traffic through it; applications that ignore those settings are not redirected automatically. Alternatively, disable system proxy mode in settings and configure an HTTP or SOCKS5 proxy at `127.0.0.1:2080` in the application you want to use.
 
-Статус «Прокси запущен» означает, что sing-box запущен и локальный порт отвечает. Это **не** проверка успешной аутентификации, доступности удалённого сервера, публичного IP или отсутствия утечек. Задержка — время установления прямого TCP-соединения с адресом сервера; это не измерение скорости или задержки внутри VPN. При нажатии кнопки проверки для каждого сервера с обычным TLS дополнительно запускается временный экземпляр sing-box и выполняется подключение через сервер к `www.cloudflare.com:443`; это раскрывает адрес и сам факт проверки выбранному VPN-серверу и Cloudflare. Результат появляется рядом с сервером по мере выполнения. Ошибки сертификата показываются отдельно от сетевых ошибок; если проверка не завершилась, отображается «не удалось проверить». Для Reality, настроек без TLS и с отключённой проверкой сертификата выводится соответствующая пометка. Подтверждение сертификата не гарантирует дальнейшую работоспособность сервера.
+On normal disconnect, ACVPN restores the previous proxy settings if another program has not changed them. After an unexpected termination, it attempts restoration on the next launch.
 
-## Идентификатор устройства подписки
+## Servers and subscriptions
 
-Некоторые провайдеры вместо серверов возвращают «App not supported», если запрос не содержит идентификатор устройства. При добавлении подписки можно включить галочку передачи идентификатора устройства. Тогда ACVPN передаёт постоянный случайный `X-HWID`, название и версию ОС и имя пользователя в формате `ОС-пользователь` только для явно разрешённой ссылки подписки. Отображение устройства и обновление уже существующей записи зависят от провайдера. Идентификатор и список разрешённых ссылок (в виде хешей) хранятся локально в зашифрованных файлах профиля Windows. Провайдер может засчитать идентификатор как отдельное устройство. Если провайдер вернул только заглушку, обновление не заменяет ею сохранённые серверы.
+The ping check measures the time to establish a direct TCP connection to each server. For servers using ordinary TLS, it also checks the certificate by connecting through the server to `www.cloudflare.com:443`; the check is visible to the VPN server and Cloudflare. Network errors and certificate errors are displayed separately; Reality, connections without TLS, and connections with certificate verification disabled have their own statuses. A verified certificate does not guarantee that a server works, and latency is not a speed measurement.
 
-## Обновления приложения
+By default, servers and favorites are sorted by ping: servers with measured latency and a verified certificate come first, followed by eligible servers without an ordinary TLS certificate; the remaining servers stay visible below. Country is inferred from the server name, not its IP address. Selecting another server while connected switches the connection to that server.
 
-Установленный ACVPN проверяет опубликованные релизы при запуске и периодически во время работы. Найденное обновление загружается автоматически и устанавливается, когда прокси отключён и настройки Windows восстановлены. Кнопка ручной проверки доступна в настройках. Для обновлений приложение обращается к публичным релизам GitHub. Установщик пока не подписан цифровым сертификатом, поэтому Windows может показывать предупреждения; подпись издателя не проверяется. Текущие установки без механизма обновлений необходимо обновить вручную один раз.
+The refresh button updates subscriptions. Disconnect and wait for server checks to finish before refreshing. Individual subscriptions can be managed in the subscription sorting mode.
 
-## Разработка и сборка
+Some providers require a device identifier. When adding a subscription, you can opt in to sending a persistent random `X-HWID`, the OS name and version, and a device name in the `OS-username` format for that subscription URL. The provider may count this as a separate device, and the displayed name depends on the provider. The identifier and permissions are stored locally in encrypted form. If a provider returns only an “App not supported” placeholder, it does not replace saved servers.
 
-Нужны Node.js и npm. В корне проекта выполните:
+## Routing and limitations
+
+- Supported URI types are VLESS, VMess (base64 JSON), Trojan, Shadowsocks (SIP002), and SOCKS5. Subscriptions can contain plain-text or base64 lists of URIs. Unsupported entries are skipped; an import with no supported entries is rejected.
+- For applicable links, VLESS Reality and TLS, TCP, WebSocket, and gRPC are supported. Not every provider-specific option is supported. Hysteria2, Shadowsocks plugins, and direct JSON, file, and QR-code imports are not implemented.
+- Website rules apply only to traffic reaching the local proxy, and domain rules include subdomains. Application rules match the full `.exe` path and take precedence over website rules. Select a running process or enter its path manually. Rule changes take effect after reconnecting.
+- The system proxy does not redirect all traffic: UDP and DNS may bypass it. A kill switch, leak protection, custom DNS settings, external IP checks, and automatic recovery after network loss are not implemented.
+- Existing Windows proxy exclusions and automatic proxy detection may affect routing. System proxy mode is rejected if Windows has a PAC URL configured.
+- The “proxy running” status means sing-box has started and its local port responds. It does not verify authentication, remote server availability, or the absence of leaks. The local proxy has no authentication and is accessible to other processes on the computer.
+- Switching servers interrupts the connection; without a kill switch, traffic may temporarily go directly. After an application crash, the system proxy may remain enabled until ACVPN is restarted; in some cases the core process may need to be terminated manually.
+
+## Data and updates
+
+Settings, configurations, and subscription URLs are stored in an encrypted `data.enc` file in Electron's user data directory. Encryption uses Electron `safeStorage` and Windows DPAPI. Configuration is passed to sing-box through standard input; while the app runs, data remains accessible to processes under the same account. ACVPN does not include analytics.
+
+HTTPS subscriptions are fetched from the supplied URL without redirects, with a 2 MB response limit. The installed application checks public GitHub releases at startup and periodically while running. Updates download automatically and install once the proxy is disconnected and Windows settings have been restored. A manual check is available in settings. Installations without the updater must be updated manually once. Unsigned builds do not provide digital verification of the publisher.
+
+## Development and building
+
+Building requires Windows, Node.js, and npm. CI uses Node.js 24.13.1:
 
 ```powershell
 npm ci
@@ -38,29 +61,18 @@ npm start
 npm run dist
 ```
 
-В `vendor/` находится официальный Windows x64 binary sing-box 1.13.21. SHA-256 скачанного архива `sing-box-1.13.21-windows-amd64.zip`: `a03291793d3a3c6e266447a58140657ac099ff278abf3b8ff678932356a62ced`; значение сверено с метаданными официального GitHub release. Сборка включает `sing-box.exe`, `libcronet.dll` и уведомление о лицензии. Исходный код ядра: https://github.com/SagerNet/sing-box/tree/v1.13.21 ; архив выпуска: https://github.com/SagerNet/sing-box/releases/tag/v1.13.21 . Для поставки учитывайте условия GPL и лицензионные условия зависимостей.
+The installer is written to `dist/`; the local unpacked build can be started from `dist/win-unpacked/ACVPN.exe`. Tests cover data handling, sing-box configuration, routing, and TLS verification using local test servers. They do not include a user-provided server or subscription.
 
-## Архитектура и данные
+[GitHub Actions](https://github.com/kameker/ACVPN/actions/workflows/windows-build.yml) installs dependencies, runs tests, and builds the Windows installer on changes to `main`, on pull requests, and on manual dispatch. The result is stored for 14 days as the `ACVPN-Windows-unsigned` artifact. This workflow does not sign the installer or publish a release.
 
-Electron отображает интерфейс; главный процесс проверяет ввод, управляет подписками и запускает sing-box отдельным процессом. Сохранённые настройки, ссылки и конфигурации целиком шифруются Electron `safeStorage`, использующим Windows DPAPI; файл `data.enc` хранится в каталоге пользовательских данных Electron. При недоступности расшифровки файл не перезаписывается. Конфигурация передаётся ядру по stdin, а не сохраняется в открытом файле. Данные остаются доступны процессам под той же учётной записью во время работы. Внутренние события остаются в памяти только до закрытия приложения и не содержат ссылок или ключей. Аналитика отсутствует. HTTPS-подписки скачиваются только по указанному адресу; перенаправления отключены, размер ограничен 2 МБ. Автообновление выполняется, пока приложение открыто.
+### Windows code signing
 
-## Форматы и ограничения
+To require a signature during a build, run `npx electron-builder --win nsis --config.forceCodeSigning=true`; the build fails if no signing key is configured. Trusted signing requires a valid code-signing certificate with an accessible private key. If the provider permits a `.pfx` or `.p12` file, set `WIN_CSC_LINK` to its path and `WIN_CSC_KEY_PASSWORD` to its password in the local environment. For a token or cloud key, follow the provider's instructions. Never commit private keys or passwords.
 
-- Импортируются отдельные URI VLESS, VMess (base64 JSON), Trojan, Shadowsocks (SIP002 `ss://base64(method:password)@host:port`) и SOCKS5. Подписка может содержать список таких URI, обычный или base64. Другие форматы подписок и нераспознанные строки пропускаются; если ни одна строка не поддерживается, импорт отклоняется. Прямой импорт JSON, QR и файлов пока отсутствует.
-- VLESS Reality и TLS, TCP, WebSocket и gRPC реализованы для соответствующих ссылок. Расширенные параметры провайдеров, Shadowsocks-плагины и Hysteria2 не интегрированы; не следует считать поддерживаемыми все варианты URI.
-- Системный режим меняет пользовательские настройки HTTP-прокси Windows. В этом режиме приложения могут игнорировать системный прокси, а UDP и DNS-запросы могут идти напрямую. Существующие исключения Windows и автоматическое обнаружение прокси не изменяются и могут влиять на маршрутизацию. Если задан URL автоматической конфигурации PAC, включение системного режима отклоняется. Правила приложений могут применяться только к трафику, который доходит до ACVPN; приложения, игнорирующие системный прокси, не перенаправляются автоматически. Настройка DNS не реализована.
-- В разделе «Исключения → Приложения» можно выбрать `.exe` из запущенных процессов, указать путь к файлу и выбрать действие «Напрямую», «Через VPN» или «Блокировать». Правила сопоставляют полный путь процесса, проверяются перед правилами сайтов и применяются после переподключения. Разные компоненты одного приложения могут использовать другие `.exe` и требовать отдельных правил; процессы с недоступным путём в список не попадают. Если файл включённого правила пропал, подключение отклоняется до исправления или отключения правила.
-- Правила сайтов действуют только для запросов, переданных локальному прокси. Доменные правила включают поддомены. Первое включённое совпавшее правило побеждает; перекрывающиеся правила с разными действиями показывают предупреждение. DNS и IP-правила зависят от того, передаёт ли клиент домен или уже разрешённый IP. Изменения правил и маршрута по умолчанию вступают в силу после переподключения.
-- При обычном отключении и сбое ядра прежние настройки системного прокси восстанавливаются. При аварийном завершении ACVPN восстановление предпринимается при следующем запуске; до этого Windows может оставаться настроенной на локальный прокси, и интернет в поддерживающих его приложениях может не работать. Если настройки изменены пользователем или другой программой, ACVPN их не перезаписывает. Резервная копия шифруется через Windows DPAPI.
-- Во время переключения между серверами соединение прерывается; при отсутствии kill switch приложения могут временно использовать прямой доступ. Kill switch, защита от утечек, автоматическое восстановление после потери сети, проверка внешнего IP, статистика скорости и полная проверка работоспособности удалённого соединения не реализованы. Аварийное завершение родительского процесса может оставить процесс ядра; в этом случае его необходимо завершить вручную. Локальный прокси не имеет аутентификации и доступен другим процессам текущего компьютера на loopback.
-- Изменение темы, языка, автозапуска и автоподключения сохраняется локально. Удаление и обновление серверов во время работы прокси запрещено, чтобы активная конфигурация не расходилась с выбранной.
+After building, verify the installer and the main `ACVPN.exe` with the PowerShell command `Get-AuthenticodeSignature`; the status should be `Valid`. Signing does not guarantee that SmartScreen warnings disappear immediately. SignPath signing requires separate approval and configuration.
 
-## Проверка
+## Licenses and components
 
-`npm test` проверяет некорректные данные, генерацию конфигураций всех пяти семейств протоколов командой `sing-box check`, настоящую маршрутизацию direct / proxy / block через локальные тестовые HTTP и SOCKS-серверы и проверку доверенного и недоверенного TLS-сертификата через локальный тестовый сервер. Сертификат и ключ в `test/fixtures` предназначены только для тестирования. Реального удалённого VPN-сервера или подписки в комплекте нет: проверка аутентификации и сквозного трафика с пользовательским провайдером остаётся за пользователем. Восстановление настроек прокси проверено на отдельном временном разделе реестра и тестах журнала восстановления; сквозная проверка включения системного прокси в реальных настройках пользователя не выполнялась. Правила процессов direct / VPN / block проверены с настоящим ядром на локальном прокси и тестовых процессах.
+ACVPN source code is licensed under [GPL-3.0-or-later](LICENSE). It includes [sing-box 1.13.21](https://github.com/SagerNet/sing-box/tree/v1.13.21), distributed under GPL-3.0-or-later with an additional restriction on using its name; see [vendor/SING-BOX-LICENSE.txt](vendor/SING-BOX-LICENSE.txt). SHA-256 of the official `sing-box-1.13.21-windows-amd64.zip` archive: `a03291793d3a3c6e266447a58140657ac099ff278abf3b8ff678932356a62ced`.
 
-## Лицензии
-
-Исходный код ACVPN предоставлен по GPL-3.0-or-later, см. `LICENSE`. Sing-box распространяется по GPL-3.0-or-later с дополнительным ограничением на использование его названия; текст уведомления — `vendor/SING-BOX-LICENSE.txt`. Electron распространяется по MIT: https://github.com/electron/electron/blob/main/LICENSE ; лицензии транзитивных пакетов доступны в `node_modules` и метаданных npm.
-
-Флаги взяты из [flag-icons](https://github.com/lipis/flag-icons), распространяемого по лицензии MIT; исходные SVG и текст лицензии включены в зависимость `flag-icons`.
+The project also uses [Electron](https://github.com/electron/electron/blob/main/LICENSE) and [flag-icons](https://github.com/lipis/flag-icons), both distributed under the MIT license. See the metadata and license files of the remaining dependencies for their terms.
