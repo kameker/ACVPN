@@ -1,5 +1,5 @@
 const test=require('node:test');const assert=require('node:assert/strict');const {spawnSync}=require('node:child_process');
-const {normalizeApplicationPath}=require('../src/app-rules');const {makeConfig}=require('../src/core');const {makeTunConfig}=require('../src/tun-config');
+const {normalizeApplicationPath}=require('../src/app-rules');const {makeConfig}=require('../src/core');
 const server={outbound:{type:'socks',server:'127.0.0.1',server_port:1080}};
 test('application paths must be absolute Windows executable paths',()=>{
  assert.equal(normalizeApplicationPath('C:\\Program Files\\App\\..\\App\\App.exe'),'C:\\Program Files\\App\\App.exe');
@@ -24,5 +24,4 @@ test('application rules precede site rules and disabled rules do not affect rout
  const config=makeConfig(server,[{value:'example.com',action:'vpn',enabled:true}],'vpn',apps);
  assert.deepEqual(config.route.rules,[{process_path:['C:\\Apps\\One.exe'],action:'route',outbound:'direct'},{process_path:['C:\\Apps\\Two.exe'],action:'reject'},{domain_suffix:['example.com'],action:'route',outbound:'proxy'}]);
  assert.equal(spawnSync('./vendor/sing-box.exe',['check','-c','stdin'],{input:JSON.stringify(config)}).status,0);
- const tun=makeTunConfig(server,[],'vpn',apps);assert.deepEqual(tun.route.rules.slice(2),config.route.rules.slice(0,2));assert.equal(spawnSync('./vendor/sing-box.exe',['check','-c','stdin'],{input:JSON.stringify(tun)}).status,0);
 });

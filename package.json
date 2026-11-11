@@ -1,6 +1,6 @@
 {
   "name": "acvpn",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Private local proxy client for Windows",
   "main": "src/main.js",
   "scripts": {
@@ -50,14 +50,6 @@
       {
         "from": "src/icon.ico",
         "to": "app-icon.ico"
-      },
-      {
-        "from": "src/tun-supervisor.ps1",
-        "to": "tun-supervisor.ps1"
-      },
-      {
-        "from": "src/tun-stop.ps1",
-        "to": "tun-stop.ps1"
       }
     ],
     "win": {
@@ -67,9 +59,18 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "kameker",
+        "repo": "ACVPN",
+        "releaseType": "release"
+      }
+    ]
   },
   "dependencies": {
+    "electron-updater": "^6.8.11",
     "flag-icons": "^7.6.0"
   }
 }

@@ -80,3 +80,4 @@ body{font-size:15px}.sidebar nav{margin-top:48px}header{justify-content:flex-end
 @media(max-width:820px){.servers-pane #ping,.servers-pane #refreshAll,.servers-pane .sort-select{font-size:11px}.app-path-field{flex-wrap:wrap}.app-path-field input{flex:1 1 100%}}
 .app-rule-form .app-path-field{flex-basis:100%}.app-rule-form .app-path-field input{min-width:140px}
 dialog label.device-consent{display:flex;align-items:flex-start;gap:10px;margin:16px 0;color:var(--text);cursor:pointer}dialog .device-consent input{flex:none;margin:3px 0;accent-color:var(--accent)}dialog .device-consent strong,dialog .device-consent small{display:block}dialog .device-consent small{margin-top:5px;color:var(--muted);font-weight:400;line-height:1.4}
+.app-update-panel{margin-top:28px;border-top:1px solid var(--line);padding-top:20px}.app-update-panel p{margin:8px 0 12px;font-size:13px}
