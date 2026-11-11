@@ -1,5 +1,13 @@
 node_modules/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/frontend/
+src-tauri/web-assets/
+src-tauri/runtime/
 dist/
+dist-size-check*/
 vendor/unpacked/
 vendor/sing-box.zip
 *.log
+*.pfx
+*.p12

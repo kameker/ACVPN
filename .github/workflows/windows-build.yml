@@ -12,7 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: windows-2022
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Check out source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -28,20 +28,33 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
+      - name: Set up Rust
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal
+          rustup override set 1.99.1
+
+      - name: Run JavaScript tests
         run: npm test
 
-      - name: Build Windows installer
-        run: npm run dist -- --publish never
+      - name: Run Rust integration tests
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml
 
-      - name: Upload unsigned build
+      - name: Build unsigned Tauri installer
+        run: npm run tauri:build -- --ci --no-sign
+
+      - name: Prepare update artifact
+        shell: pwsh
+        run: |
+          $version = (Get-Content -Raw package.json | ConvertFrom-Json).version
+          $installer = Get-Item "src-tauri/target/release/bundle/nsis/ACVPN_${version}_x64-setup.exe"
+          New-Item -ItemType Directory -Path tauri-artifact | Out-Null
+          Copy-Item -LiteralPath $installer.FullName -Destination "tauri-artifact/ACVPN-Tauri-Setup-$version.exe"
+
+      - name: Upload unsigned Tauri build
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: ACVPN-Windows-unsigned
-          path: |
-            dist/*.exe
-            dist/*.exe.blockmap
-            dist/latest.yml
+          name: ACVPN-Tauri-Windows-unsigned
+          path: tauri-artifact/*.exe
           if-no-files-found: error
           compression-level: 0
           retention-days: 14

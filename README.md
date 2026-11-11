@@ -2,7 +2,7 @@
 
 **English** | [Русский](README.ru.md)
 
-ACVPN is a Windows application for connecting to your own servers and subscriptions through a local proxy. ACVPN does not provide servers or subscriptions; obtain them from a provider or set up your own.
+ACVPN is a Windows application for connecting to your own servers and subscriptions through a local proxy. The Tauri edition uses Windows WebView2 for its interface, a bundled Node.js backend, and sing-box for connections. ACVPN does not provide servers or subscriptions; obtain them from a provider or set up your own.
 
 ## Features
 
@@ -15,7 +15,7 @@ ACVPN is a Windows application for connecting to your own servers and subscripti
 
 ## Installation and connection
 
-1. Download and run the installer from [GitHub Releases](https://github.com/kameker/ACVPN/releases). Windows may warn about an unknown publisher when the build is unsigned.
+1. Download `ACVPN-Tauri-Setup-2.0.0.exe` from [GitHub Releases](https://github.com/kameker/ACVPN/releases/latest) and run it. Windows may warn about an unknown publisher because the installer is unsigned.
 2. Select **Add** and paste a configuration URI or an HTTPS subscription URL.
 3. Select a server and press the connection button.
 4. Press the button again to disconnect. Closing the window minimizes ACVPN to the system tray; use the tray menu to quit completely.
@@ -23,6 +23,8 @@ ACVPN is a Windows application for connecting to your own servers and subscripti
 By default, ACVPN configures the Windows system proxy. Applications that use the system settings can send traffic through it; applications that ignore those settings are not redirected automatically. Alternatively, disable system proxy mode in settings and configure an HTTP or SOCKS5 proxy at `127.0.0.1:2080` in the application you want to use.
 
 On normal disconnect, ACVPN restores the previous proxy settings if another program has not changed them. After an unexpected termination, it attempts restoration on the next launch.
+
+When moving from the Electron edition, disconnect and exit the old app from its tray menu before starting the Tauri edition. Install 2.0.0 manually. The new app imports the encrypted profile into a separate directory without changing the old files; the old installation is not removed. If the old profile's encryption key is missing, ACVPN offers to create an empty profile. The old files remain untouched, but subscriptions must be added again unless the original key can be recovered.
 
 ## Servers and subscriptions
 
@@ -46,33 +48,33 @@ Some providers require a device identifier. When adding a subscription, you can 
 
 ## Data and updates
 
-Settings, configurations, and subscription URLs are stored in an encrypted `data.enc` file in Electron's user data directory. Encryption uses Electron `safeStorage` and Windows DPAPI. Configuration is passed to sing-box through standard input; while the app runs, data remains accessible to processes under the same account. ACVPN does not include analytics.
+Settings, configurations, and subscription URLs are stored in an encrypted `data.enc` file under `%APPDATA%\app.acvpn.tauri`. The Windows storage format is compatible with Electron `safeStorage` and protects its encryption key using Windows DPAPI. Configuration is passed to sing-box through standard input; while the app runs, data remains accessible to processes under the same account. ACVPN does not include analytics.
 
-HTTPS subscriptions are fetched from the supplied URL without redirects, with a 2 MB response limit. The installed application checks public GitHub releases at startup and periodically while running. Updates download automatically and install once the proxy is disconnected and Windows settings have been restored. A manual check is available in settings. Installations without the updater must be updated manually once. Unsigned builds do not provide digital verification of the publisher.
+HTTPS subscriptions are fetched from the supplied URL without redirects, with a 2 MB response limit. The installed application checks public GitHub releases at startup and periodically while running. The Tauri updater accepts only its own installer asset, verifies its size and GitHub-provided SHA-256 digest, and installs it once the proxy is disconnected and Windows settings have been restored. A manual check is available in settings. The checksum verifies download integrity, but an unsigned build does not provide digital verification of the publisher.
 
 ## Development and building
 
-Building requires Windows, Node.js, and npm. CI uses Node.js 24.13.1:
+Building the Tauri edition requires Windows, Node.js 24.13.1, npm, Rust, the Microsoft C++ build tools, and WebView2. CI uses Rust 1.99.1:
 
 ```powershell
 npm ci
 npm test
-npm start
-npm run dist
+cargo test --locked --manifest-path src-tauri/Cargo.toml
+npm run tauri:build -- --ci --no-sign
 ```
 
-The installer is written to `dist/`; the local unpacked build can be started from `dist/win-unpacked/ACVPN.exe`. Tests cover data handling, sing-box configuration, routing, and TLS verification using local test servers. They do not include a user-provided server or subscription.
+The installer is written to `src-tauri/target/release/bundle/nsis/` unless `CARGO_TARGET_DIR` is set. Use `npm start` to run the application during development. Tests cover data handling, profile migration, sing-box configuration, routing, and TLS verification using local test servers. They do not include a user-provided server or subscription.
 
-[GitHub Actions](https://github.com/kameker/ACVPN/actions/workflows/windows-build.yml) installs dependencies, runs tests, and builds the Windows installer on changes to `main`, on pull requests, and on manual dispatch. The result is stored for 14 days as the `ACVPN-Windows-unsigned` artifact. This workflow does not sign the installer or publish a release.
+[GitHub Actions](https://github.com/kameker/ACVPN/actions/workflows/windows-build.yml) installs dependencies, runs tests, and builds the Windows installer on changes to `main`, on pull requests, and on manual dispatch. The installer is stored for 14 days as `ACVPN-Tauri-Windows-unsigned`. The workflow does not sign installers or publish a release. For future updates, the GitHub release must contain `ACVPN-Tauri-Setup-<version>.exe`.
 
 ### Windows code signing
 
-To require a signature during a build, run `npx electron-builder --win nsis --config.forceCodeSigning=true`; the build fails if no signing key is configured. Trusted signing requires a valid code-signing certificate with an accessible private key. If the provider permits a `.pfx` or `.p12` file, set `WIN_CSC_LINK` to its path and `WIN_CSC_KEY_PASSWORD` to its password in the local environment. For a token or cloud key, follow the provider's instructions. Never commit private keys or passwords.
+Trusted signing requires a valid code-signing certificate with an accessible private key. Signing the Tauri installer requires separate configuration using the certificate provider's instructions. Never commit private keys or passwords.
 
-After building, verify the installer and the main `ACVPN.exe` with the PowerShell command `Get-AuthenticodeSignature`; the status should be `Valid`. Signing does not guarantee that SmartScreen warnings disappear immediately. SignPath signing requires separate approval and configuration.
+After signing, verify the installer and the main `acvpn-tauri.exe` with the PowerShell command `Get-AuthenticodeSignature`; the status should be `Valid`. Signing does not guarantee that SmartScreen warnings disappear immediately. SignPath signing requires separate approval and configuration.
 
 ## Licenses and components
 
 ACVPN source code is licensed under [GPL-3.0-or-later](LICENSE). It includes [sing-box 1.13.21](https://github.com/SagerNet/sing-box/tree/v1.13.21), distributed under GPL-3.0-or-later with an additional restriction on using its name; see [vendor/SING-BOX-LICENSE.txt](vendor/SING-BOX-LICENSE.txt). SHA-256 of the official `sing-box-1.13.21-windows-amd64.zip` archive: `a03291793d3a3c6e266447a58140657ac099ff278abf3b8ff678932356a62ced`.
 
-The project also uses [Electron](https://github.com/electron/electron/blob/main/LICENSE) and [flag-icons](https://github.com/lipis/flag-icons), both distributed under the MIT license. See the metadata and license files of the remaining dependencies for their terms.
+ACVPN also bundles [Node.js](src-tauri/licenses/NODE-LICENSE.txt). Flag graphics come from [flag-icons](https://github.com/lipis/flag-icons). See the metadata and license files of these and the remaining dependencies for their terms.

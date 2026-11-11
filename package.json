@@ -1,76 +1,20 @@
 {
   "name": "acvpn",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "description": "Private local proxy client for Windows",
-  "main": "src/main.js",
-  "scripts": {
-    "start": "electron .",
-    "test": "node --test",
-    "dist": "electron-builder --win nsis"
-  },
-  "keywords": [],
-  "author": "",
   "license": "GPL-3.0-or-later",
   "type": "commonjs",
+  "scripts": {
+    "start": "tauri dev --features production --config src-tauri/tauri.production.conf.json",
+    "test": "node --test",
+    "tauri:build": "tauri build --features production --config src-tauri/tauri.production.conf.json",
+    "tauri:preview": "tauri dev --features preview"
+  },
   "devDependencies": {
-    "electron": "^45.2.1",
-    "electron-builder": "^26.18.0",
+    "@tauri-apps/cli": "2.12.4",
     "jsdom": "^29.1.1"
   },
-  "productName": "ACVPN",
-  "build": {
-    "appId": "app.acvpn.client",
-    "productName": "ACVPN",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "src/**/*",
-      "package.json",
-      "LICENSE",
-      "README.md"
-    ],
-    "extraResources": [
-      {
-        "from": "vendor/sing-box.exe",
-        "to": "sing-box.exe"
-      },
-      {
-        "from": "vendor/libcronet.dll",
-        "to": "libcronet.dll"
-      },
-      {
-        "from": "vendor/SING-BOX-LICENSE.txt",
-        "to": "SING-BOX-LICENSE.txt"
-      },
-      {
-        "from": "src/windows-proxy.ps1",
-        "to": "windows-proxy.ps1"
-      },
-      {
-        "from": "src/icon.ico",
-        "to": "app-icon.ico"
-      }
-    ],
-    "win": {
-      "target": "nsis",
-      "icon": "src/icon.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "kameker",
-        "repo": "ACVPN",
-        "releaseType": "release"
-      }
-    ]
-  },
   "dependencies": {
-    "electron-updater": "^6.8.11",
     "flag-icons": "^7.6.0"
   }
 }

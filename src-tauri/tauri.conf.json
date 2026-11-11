@@ -1,0 +1,32 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "ACVPN Tauri Preview",
+  "version": "0.1.0",
+  "identifier": "app.acvpn.migration.preview",
+  "build": { "beforeBuildCommand": "node src-tauri/prepare-assets.js", "beforeDevCommand": "node src-tauri/prepare-assets.js", "frontendDist": "web-assets" },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [{ "title": "ACVPN — Tauri preview (test profile)", "url": "src/index.html", "width": 1200, "height": 790, "minWidth": 740, "minHeight": 600 }],
+    "security": { "csp": "default-src 'self'; style-src 'self'" }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": ["../src/icon.ico"],
+    "resources": {
+      "../src/": "src/",
+      "sidecar/": "src-tauri/sidecar/",
+      "../vendor/sing-box.exe": "vendor/sing-box.exe",
+      "../vendor/libcronet.dll": "vendor/libcronet.dll",
+      "../vendor/SING-BOX-LICENSE.txt": "vendor/SING-BOX-LICENSE.txt",
+      "../LICENSE": "LICENSE",
+      "../README.md": "README.md",
+      "../README.ru.md": "README.ru.md",
+      "../node_modules/flag-icons/LICENSE": "licenses/FLAG-ICONS-LICENSE.txt",
+      "licenses/TAURI-MIT.txt": "licenses/TAURI-MIT.txt",
+      "licenses/TAURI-APACHE-2.0.txt": "licenses/TAURI-APACHE-2.0.txt",
+      "runtime/node.exe": "runtime/node.exe",
+      "licenses/NODE-LICENSE.txt": "runtime/NODE-LICENSE.txt"
+    }
+  }
+}

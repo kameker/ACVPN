@@ -1,0 +1,32 @@
+[package]
+name = "acvpn-tauri"
+version = "2.0.0"
+edition = "2021"
+publish = false
+
+[features]
+preview = ["dep:tauri", "dep:tauri-build", "dep:tauri-plugin-single-instance", "dep:tauri-plugin-notification"]
+diagnostic = []
+production = ["preview"]
+
+[lib]
+name = "acvpn_migration"
+
+[[bin]]
+name = "acvpn-tauri"
+path = "src/main.rs"
+required-features = ["preview"]
+
+[dependencies]
+dunce = "1"
+serde_json = "1"
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
+tauri = { version = "2", features = ["tray-icon"], optional = true }
+tauri-plugin-single-instance = { version = "2", optional = true }
+tauri-plugin-notification = { version = "2", optional = true }
+
+[build-dependencies]
+tauri-build = { version = "2", optional = true , features = [] }
+
+[dev-dependencies]
+tempfile = "3"
