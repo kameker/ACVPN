@@ -1,6 +1,6 @@
 {
   "productName": "ACVPN",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "identifier": "app.acvpn.tauri",
   "app": {
     "windows": [{ "title": "ACVPN", "url": "src/index.html", "width": 1200, "height": 790, "minWidth": 740, "minHeight": 600 }]

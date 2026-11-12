@@ -12,6 +12,7 @@ test('updater passes installer path as data and waits for the application proces
   launchUpdateAfterExit(installer, 456, spawn, error => { assert.ifError(error); ready = true; });
   assert.equal(invocation.program, 'powershell.exe');
   assert.equal(invocation.args.join(' ').includes(installer), false);
+  assert.match(invocation.args.join(' '), /\/S\s+\/R/);
   assert.equal(invocation.options.windowsHide, true);
   assert.deepEqual(payload, { installer, hostPid: 456 });
   assert.equal(detached, true);

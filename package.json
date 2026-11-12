@@ -1,6 +1,6 @@
 {
   "name": "acvpn",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Private local proxy client for Windows",
   "license": "GPL-3.0-or-later",
   "type": "commonjs",

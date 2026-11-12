@@ -15,7 +15,7 @@ ACVPN is a Windows application for connecting to your own servers and subscripti
 
 ## Installation and connection
 
-1. Download `ACVPN-Tauri-Setup-2.0.1.exe` from [GitHub Releases](https://github.com/kameker/ACVPN/releases/latest) and run it. Windows may warn about an unknown publisher because the installer is unsigned.
+1. Download `ACVPN-Tauri-Setup-2.0.2.exe` from [GitHub Releases](https://github.com/kameker/ACVPN/releases/latest) and run it. Windows may warn about an unknown publisher because the installer is unsigned.
 2. Select **Add** and paste a configuration URI or an HTTPS subscription URL.
 3. Select a server and press the connection button.
 4. Press the button again to disconnect. Closing the window minimizes ACVPN to the system tray; use the tray menu to quit completely.
@@ -26,7 +26,7 @@ By default, ACVPN configures the Windows system proxy. Applications that use the
 
 On normal disconnect, ACVPN restores the previous proxy settings if another program has not changed them. After an unexpected termination, it attempts restoration on the next launch.
 
-When moving from the Electron edition, disconnect and exit the old app from its tray menu before starting the Tauri edition. Install 2.0.1 manually. The new app imports the encrypted profile into a separate directory without changing the old files; the old installation is not removed. If the old profile's encryption key is missing, ACVPN offers to create an empty profile. The old files remain untouched, but subscriptions must be added again unless the original key can be recovered.
+When moving from the Electron edition, disconnect and exit the old app from its tray menu before starting the Tauri edition. Install 2.0.2 manually. The new app imports the encrypted profile into a separate directory without changing the old files; the old installation is not removed. If the old profile's encryption key is missing, ACVPN offers to create an empty profile. The old files remain untouched, but subscriptions must be added again unless the original key can be recovered.
 
 ## Servers and subscriptions
 
