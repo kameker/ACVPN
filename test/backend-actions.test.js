@@ -11,6 +11,32 @@ function create(profile, options = {}) {
   return createBackend({ profile, safeStorage, clipboard: {}, pickApplication: async () => null, setAutostart() {}, ...options });
 }
 
+test('application updates cannot be checked or installed through the backend', async () => {
+  const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'acvpn-no-update-'));
+  let checks = 0, installs = 0;
+  const updater = { on() {}, checkForUpdates() { checks++; }, quitAndInstall() { installs++; } };
+  const backend = create(profile, { updater, proxyOperation: () => ({}) });
+  try { await backend.start(); assert.match((await backend.action('checkAppUpdates')).error, /Unknown action/); assert.equal(checks, 0); assert.equal(installs, 0); }
+  finally { backend.shutdown(); fs.rmSync(profile, { recursive: true, force: true }); }
+});
+
+test('proxy conflict remains visible until user explicitly resolves it', async () => {
+  const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'acvpn-conflict-ui-'));
+  const choices = [];
+  const proxyManagerFactory = () => ({ recover: () => ({ recovered: true, restored: false }), resolve: choice => choices.push(choice) });
+  const backend = create(profile, { proxyManagerFactory, proxyOperation: () => ({}) });
+  try {
+    await backend.start();
+    assert.equal((await backend.action('state')).coreProblem, 'proxyConflict');
+    await backend.action('disconnect');
+    assert.equal((await backend.action('state')).coreProblem, 'proxyConflict');
+    assert.match((await backend.action('resolveProxyConflict', { choice: 'invalid' })).error, /Invalid/);
+    assert.equal((await backend.action('resolveProxyConflict', { choice: 'keep' })).ok, true);
+    assert.deepEqual(choices, ['keep']);
+    assert.equal((await backend.action('state')).coreProblem, null);
+  } finally { backend.shutdown(); fs.rmSync(profile, { recursive: true, force: true }); }
+});
+
 test('startup warns when Windows points to an unreachable local proxy without changing it', async () => {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'acvpn-orphan-'));
   const operations = [];

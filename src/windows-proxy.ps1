@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][ValidateSet('read','apply','restore')]$Operation, [string]$RegistryPath='HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings')
+param([Parameter(Mandatory=$true)][ValidateSet('read','apply','restore','restore-confirmed')]$Operation, [string]$RegistryPath='HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings')
 $ErrorActionPreference='Stop'
 [Console]::InputEncoding=New-Object System.Text.UTF8Encoding($false)
 [Console]::OutputEncoding=New-Object System.Text.UTF8Encoding($false)
@@ -14,29 +14,50 @@ function writeValue([string]$name,$entry) {
  if($entry.exists) { $kind=[Enum]::Parse([Microsoft.Win32.RegistryValueKind],$entry.kind);$key.SetValue($name,$entry.value,$kind) }
  elseif($key.GetValueNames() -contains $name) { $key.DeleteValue($name,$false) }
 }
+function sameValue($a,$b) { return ($a.exists -eq $b.exists -and $a.kind -ceq $b.kind -and $a.value -ceq $b.value) }
 function notifyWindows {
  Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class ACVPNWinInet { [DllImport("wininet.dll", SetLastError=true)] public static extern bool InternetSetOption(IntPtr h, int option, IntPtr buffer, int length); }'
  if(-not [ACVPNWinInet]::InternetSetOption([IntPtr]::Zero,39,[IntPtr]::Zero,0)) { throw 'Could not notify Windows of proxy change' }
  if(-not [ACVPNWinInet]::InternetSetOption([IntPtr]::Zero,37,[IntPtr]::Zero,0)) { throw 'Could not refresh Windows proxy settings' }
 }
 if($Operation -eq 'read') {
- $pac=readValue 'AutoConfigURL';$server=readValue 'ProxyServer';$enabled=readValue 'ProxyEnable'
+ $pac=readValue 'AutoConfigURL';$server=readValue 'ProxyServer';$enabled=readValue 'ProxyEnable';$bypass=readValue 'ProxyOverride';$autoDetect=readValue 'AutoDetect'
  if(($server.exists -and $server.kind -notin @('String','ExpandString')) -or ($enabled.exists -and $enabled.kind -ne 'DWord')) { throw 'Unsupported proxy configuration' }
- @{server=$server;enabled=$enabled;hasPac=($pac.exists -and -not [string]::IsNullOrWhiteSpace([string]$pac.value))}|ConvertTo-Json -Depth 5 -Compress
+ @{server=$server;enabled=$enabled;autoConfigUrl=$pac;bypass=$bypass;autoDetect=$autoDetect;hasPac=($pac.exists -and -not [string]::IsNullOrWhiteSpace([string]$pac.value))}|ConvertTo-Json -Depth 5 -Compress
 } elseif($Operation -eq 'apply') {
  $prior=([Console]::In.ReadToEnd() | ConvertFrom-Json)
  $pac=readValue 'AutoConfigURL';if($pac.exists -and -not [string]::IsNullOrWhiteSpace([string]$pac.value)){throw 'Proxy auto-configuration is enabled'}
  $currentServer=readValue 'ProxyServer';$currentEnabled=readValue 'ProxyEnable'
  if($currentServer.exists -ne $prior.server.exists -or $currentServer.kind -cne $prior.server.kind -or $currentServer.value -cne $prior.server.value -or $currentEnabled.exists -ne $prior.enabled.exists -or $currentEnabled.kind -cne $prior.enabled.kind -or $currentEnabled.value -ne $prior.enabled.value) {throw 'Proxy settings changed during activation'}
+ if($null -ne $prior.autoConfigUrl -and -not (sameValue $pac $prior.autoConfigUrl)) {throw 'Proxy settings changed during activation'}
+ if($null -ne $prior.bypass -and -not (sameValue (readValue 'ProxyOverride') $prior.bypass)) {throw 'Proxy settings changed during activation'}
+ if($null -ne $prior.autoDetect -and -not (sameValue (readValue 'AutoDetect') $prior.autoDetect)) {throw 'Proxy settings changed during activation'}
  $key.SetValue('ProxyServer','127.0.0.1:2080',[Microsoft.Win32.RegistryValueKind]::String)
  $key.SetValue('ProxyEnable',1,[Microsoft.Win32.RegistryValueKind]::DWord)
  notifyWindows
  '{"ok":true}'
+} elseif($Operation -eq 'restore-confirmed') {
+ $inputJson=[Console]::In.ReadToEnd();$request=$inputJson|ConvertFrom-Json;$expected=$request.expected;$prior=$request.previous
+ if(-not (sameValue (readValue 'ProxyServer') $expected.server) -or -not (sameValue (readValue 'ProxyEnable') $expected.enabled) -or -not (sameValue (readValue 'AutoConfigURL') $expected.autoConfigUrl) -or -not (sameValue (readValue 'ProxyOverride') $expected.bypass) -or -not (sameValue (readValue 'AutoDetect') $expected.autoDetect)) {throw 'Proxy settings changed during confirmation'}
+ writeValue 'ProxyEnable' $prior.enabled;writeValue 'ProxyServer' $prior.server
+ if($null -ne $prior.autoConfigUrl){writeValue 'AutoConfigURL' $prior.autoConfigUrl}
+ if($null -ne $prior.bypass){writeValue 'ProxyOverride' $prior.bypass}
+ if($null -ne $prior.autoDetect){writeValue 'AutoDetect' $prior.autoDetect}
+ notifyWindows
+ '{"restored":true}'
 } else {
  $inputJson=[Console]::In.ReadToEnd();$prior=$inputJson|ConvertFrom-Json
  $currentServer=readValue 'ProxyServer';$currentEnabled=readValue 'ProxyEnable'
  # Do not overwrite changes made by another application or the user.
  $canRestore=($currentServer.exists -and $currentServer.value -eq '127.0.0.1:2080' -and (($currentEnabled.exists -and [int]$currentEnabled.value -eq 1) -or ($currentEnabled.exists -eq $prior.enabled.exists -and $currentEnabled.value -eq $prior.enabled.value)))
- if($canRestore) {writeValue 'ProxyEnable' $prior.enabled;writeValue 'ProxyServer' $prior.server;notifyWindows}
- @{restored=$canRestore}|ConvertTo-Json -Compress
+ $pac=readValue 'AutoConfigURL';if($null -ne $prior.autoConfigUrl) {$canRestore=$canRestore -and (sameValue $pac $prior.autoConfigUrl)} elseif($pac.exists -and -not [string]::IsNullOrWhiteSpace([string]$pac.value)) {$canRestore=$false}
+ if($null -ne $prior.bypass) {$canRestore=$canRestore -and (sameValue (readValue 'ProxyOverride') $prior.bypass)}
+ if($null -ne $prior.autoDetect) {$canRestore=$canRestore -and (sameValue (readValue 'AutoDetect') $prior.autoDetect)}
+ $alreadyRestored=(sameValue $currentServer $prior.server) -and (sameValue $currentEnabled $prior.enabled)
+ if($null -ne $prior.autoConfigUrl) {$alreadyRestored=$alreadyRestored -and (sameValue $pac $prior.autoConfigUrl)} elseif($pac.exists -and -not [string]::IsNullOrWhiteSpace([string]$pac.value)) {$alreadyRestored=$false}
+ if($null -ne $prior.bypass) {$alreadyRestored=$alreadyRestored -and (sameValue (readValue 'ProxyOverride') $prior.bypass)}
+ if($null -ne $prior.autoDetect) {$alreadyRestored=$alreadyRestored -and (sameValue (readValue 'AutoDetect') $prior.autoDetect)}
+ if($canRestore) {writeValue 'ProxyEnable' $prior.enabled;writeValue 'ProxyServer' $prior.server}
+ if($canRestore -or $alreadyRestored) {notifyWindows}
+ @{restored=($canRestore -or $alreadyRestored)}|ConvertTo-Json -Compress
 }

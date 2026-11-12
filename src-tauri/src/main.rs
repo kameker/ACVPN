@@ -144,13 +144,6 @@ fn main() {
                             .body(data["body"].as_str().unwrap_or(""))
                             .show();
                     }
-                    Some("update-install") => {
-                        let handle = handle.clone();
-                        tauri::async_runtime::spawn_blocking(move || {
-                            let host = handle.state::<Arc<BackendHost>>();
-                            if host.shutdown(Duration::from_secs(20)).is_ok() { handle.exit(0); }
-                        });
-                    }
                     _ => {}
                 }
             });

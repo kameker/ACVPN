@@ -9,8 +9,8 @@ const { createSafeStorage } = require('./safe-storage');
 const { createWindowsUi } = require('./windows-ui');
 const { createShutdownCoordinator } = require('./shutdown');
 const { createLoginItems } = require('./autostart');
-const { createTauriUpdater } = require('./updater');
-const { launchUpdateAfterExit } = require('./update-launcher');
+const { createProxyCoordinator } = require('./proxy-coordinator');
+const { createProxyGuard } = require('./proxy-guard-start');
 
 const profile = process.env.ACVPN_TAURI_PROFILE;
 if (!profile || !path.isAbsolute(profile)) throw Error('A private profile path is required');
@@ -18,22 +18,22 @@ fs.mkdirSync(profile, { recursive: true });
 const windowsUi = createWindowsUi();
 let outputOpen = true, quitting = false;
 const write = value => { if (outputOpen) process.stdout.write(JSON.stringify(value) + '\n'); };
-let updater = null;
-if (process.env.ACVPN_TAURI_RELEASE_VERSION && process.env.ACVPN_TAURI_HOST_PID) {
-  const hostPid = Number(process.env.ACVPN_TAURI_HOST_PID);
-  if (!Number.isSafeInteger(hostPid) || hostPid < 1) throw Error('Invalid application process');
-  updater = createTauriUpdater({
-    version: process.env.ACVPN_TAURI_RELEASE_VERSION,
-    directory: path.join(profile, 'updates'),
-    launch(file) {
-      launchUpdateAfterExit(file, hostPid, undefined, error => {
-        if (error) updater.emit('error', Error('Could not start update launcher'));
-        else write({ event: 'update-install' });
-      });
-    },
-  });
+const production = !!process.env.ACVPN_TAURI_RELEASE_VERSION;
+let backend;
+async function guardFailed() {
+  let disconnected = false;
+  for (let attempt = 0; attempt < 5 && !quitting; attempt++) {
+    const result = await backend.action('disconnect');
+    if (!result.error) {
+      const state = await backend.action('state');
+      if (!state.coreRunning && state.coreProblem !== 'proxyRestore') { disconnected = true; break; }
+    }
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+  write({ event: 'notification', data: { title: 'ACVPN', body: disconnected ? 'Помощник восстановления остановился; соединение отключено. / Recovery helper stopped; connection disconnected.' : 'Помощник восстановления остановился. Проверьте соединение. / Recovery helper stopped. Check your connection.' } });
 }
-const backend = createBackend({
+const proxyGuard = production ? createProxyGuard({ profile, onFailure: () => { guardFailed().catch(() => {}); } }) : null;
+backend = createBackend({
   profile,
   safeStorage: createSafeStorage(profile),
   clipboard: windowsUi.clipboard,
@@ -51,13 +51,14 @@ const backend = createBackend({
   notify(data) { write({ event: 'notification', data }); },
   onUpdate(data) { write({ event: 'update', data }); },
   restoreAutostart: process.env.ACVPN_TAURI_MIGRATED === '1',
-  updater,
+  proxyManagerFactory: production ? () => createProxyCoordinator({ profile, ownerPid: process.pid }) : null,
+  ensureProxyGuard: production ? () => proxyGuard.ensure() : async () => {},
 });
 const shutdown = createShutdownCoordinator({
   tryQuit() {
     if (quitting) return true;
     if (!backend.shutdown()) { write({ event: 'shutdown-error' }); return false; }
-    quitting = true; setImmediate(() => process.exit(0)); return true;
+    quitting = true; proxyGuard?.stop(); setImmediate(() => process.exit(0)); return true;
   },
 });
 process.stdout.on('error', () => { outputOpen = false; shutdown.begin(); });

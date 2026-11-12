@@ -96,7 +96,7 @@ fn packaged_node_backend_can_stay_running() {
 }
 
 #[test]
-fn release_backend_enables_the_updater_without_starting_a_network_check_immediately() {
+fn release_backend_does_not_enable_application_updates() {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .unwrap()
@@ -119,32 +119,6 @@ fn release_backend_enables_the_updater_without_starting_a_network_check_immediat
     let state = host
         .call("state", json!({}), Duration::from_secs(10))
         .unwrap();
-    assert_eq!(state["appUpdate"]["status"], "idle");
+    assert!(state.get("appUpdate").is_none());
     host.shutdown(Duration::from_secs(5)).unwrap();
-}
-
-#[test]
-fn host_forwards_the_update_install_event_to_tauri() {
-    let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .to_owned();
-    let profile = tempfile::tempdir().unwrap();
-    let (sender, receiver) = std::sync::mpsc::channel();
-    let events = Arc::new(move |value| {
-        let _ = sender.send(value);
-    });
-    let host = BackendHost::start(
-        "node",
-        &workspace.join("src-tauri/tests/fixtures/update-event.cjs"),
-        profile.path(),
-        events,
-    )
-    .unwrap();
-    let notification = receiver.recv_timeout(Duration::from_secs(5)).unwrap();
-    assert_eq!(notification["event"], "notification");
-    let event = receiver.recv_timeout(Duration::from_secs(5)).unwrap();
-    assert_eq!(event["event"], "update-install");
-    host.shutdown(Duration::from_secs(5)).unwrap();
-    assert!(receiver.recv_timeout(Duration::from_millis(200)).is_err());
 }

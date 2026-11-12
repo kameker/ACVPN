@@ -10,12 +10,11 @@ ACVPN is a Windows application for connecting to your own servers and subscripti
 - Search and sort servers, save favorites, and check latency and certificates.
 - Use the Windows system proxy or configure a local HTTP/SOCKS5 proxy manually.
 - Route websites and applications directly, through the proxy, or block them.
-- Automatically check for updates to the installed application.
 - English and Russian interfaces, light and dark themes, and a system tray.
 
 ## Installation and connection
 
-1. Download `ACVPN-Tauri-Setup-2.0.3.exe` from [GitHub Releases](https://github.com/kameker/ACVPN/releases/latest) and run it. Windows may warn about an unknown publisher because the installer is unsigned.
+1. Download `ACVPN-Setup-2.0.4.exe` from [GitHub Releases](https://github.com/kameker/ACVPN/releases/latest) and run it. Windows may warn about an unknown publisher because the installer is unsigned.
 2. Select **Add** and paste a configuration URI or an HTTPS subscription URL.
 3. Select a server and press the connection button.
 4. Press the button again to disconnect. Closing the window minimizes ACVPN to the system tray; use the tray menu to quit completely.
@@ -24,9 +23,9 @@ The installer checks for Microsoft Edge WebView2 Runtime and downloads it if it 
 
 By default, ACVPN configures the Windows system proxy. Applications that use the system settings can send traffic through it; applications that ignore those settings are not redirected automatically. Alternatively, disable system proxy mode in settings and configure an HTTP or SOCKS5 proxy at `127.0.0.1:2080` in the application you want to use.
 
-On normal disconnect, ACVPN restores the previous proxy settings if another program has not changed them. After an unexpected termination, it attempts restoration on the next launch.
+On normal disconnect, ACVPN restores the previous proxy settings if another program has not changed them. In system proxy mode it starts a recovery helper and registers a separate Windows logon entry, even when the application's own autostart is disabled. The helper attempts recovery after the backend exits unexpectedly and again at the next user logon. If settings have changed externally, ACVPN retains the recovery record and asks whether to keep the current settings or restore the saved settings.
 
-When moving from the Electron edition, disconnect and exit the old app from its tray menu before starting the Tauri edition. Install 2.0.3 manually. The new app imports the encrypted profile into a separate directory without changing the old files; the old installation is not removed. If the old profile's encryption key is missing, ACVPN offers to create an empty profile. The old files remain untouched, but subscriptions must be added again unless the original key can be recovered.
+When moving from the Electron edition, disconnect and exit the old app from its tray menu before starting the Tauri edition. Install 2.0.4 manually. The new app imports the encrypted profile into a separate directory without changing the old files; the old installation is not removed. If the old profile's encryption key is missing, ACVPN offers to create an empty profile. The old files remain untouched, but subscriptions must be added again unless the original key can be recovered.
 
 ## Servers and subscriptions
 
@@ -46,13 +45,13 @@ Some providers require a device identifier. When adding a subscription, you can 
 - The system proxy does not redirect all traffic: UDP and DNS may bypass it. A kill switch, leak protection, custom DNS settings, external IP checks, and automatic recovery after network loss are not implemented.
 - Existing Windows proxy exclusions and automatic proxy detection may affect routing. System proxy mode is rejected if Windows has a PAC URL configured.
 - The “proxy running” status means sing-box has started and its local port responds. It does not verify authentication, remote server availability, or the absence of leaks. The local proxy has no authentication and is accessible to other processes on the computer.
-- Switching servers interrupts the connection; without a kill switch, traffic may temporarily go directly. After an application crash, the system proxy may remain enabled until ACVPN is restarted; in some cases the core process may need to be terminated manually.
+- Switching servers interrupts the connection; without a kill switch, traffic may temporarily go directly. Recovery after a crash or power loss is best effort: it needs the user's Windows session, access to the encrypted record and working Windows proxy settings. In some cases the core process may need to be terminated manually. Other programs can change proxy settings between the comparison and restoration.
 
 ## Data and updates
 
 Settings, configurations, and subscription URLs are stored in an encrypted `data.enc` file under `%APPDATA%\app.acvpn.tauri`. The Windows storage format is compatible with Electron `safeStorage` and protects its encryption key using Windows DPAPI. Configuration is passed to sing-box through standard input; while the app runs, data remains accessible to processes under the same account. ACVPN does not include analytics.
 
-HTTPS subscriptions are fetched from the supplied URL without redirects, with a 2 MB response limit. The installed application checks public GitHub releases at startup and periodically while running. The Tauri updater accepts only its own installer asset, verifies its size and GitHub-provided SHA-256 digest, and installs it once the proxy is disconnected and Windows settings have been restored. A manual check is available in settings. The checksum verifies download integrity, but an unsigned build does not provide digital verification of the publisher.
+HTTPS subscriptions are fetched from the supplied URL without redirects, with a 2 MB response limit. Application updates are installed manually: download the new installer from GitHub Releases, disconnect and exit ACVPN, then run it. The installer is unsigned.
 
 ## Development and building
 
@@ -67,7 +66,7 @@ npm run tauri:build -- --ci --no-sign
 
 The installer is written to `src-tauri/target/release/bundle/nsis/` unless `CARGO_TARGET_DIR` is set. Use `npm start` to run the application during development. Tests cover data handling, profile migration, sing-box configuration, routing, and TLS verification using local test servers. They do not include a user-provided server or subscription.
 
-[GitHub Actions](https://github.com/kameker/ACVPN/actions/workflows/windows-build.yml) installs dependencies, runs tests, and builds the Windows installer on changes to `main`, on pull requests, and on manual dispatch. The installer is stored for 14 days as `ACVPN-Tauri-Windows-unsigned`. The workflow does not sign installers or publish a release. For future updates, the GitHub release must contain `ACVPN-Tauri-Setup-<version>.exe`.
+[GitHub Actions](https://github.com/kameker/ACVPN/actions/workflows/windows-build.yml) installs dependencies, runs tests, and builds the Windows installer on changes to `main`, on pull requests, and on manual dispatch. The installer is stored for 14 days as `ACVPN-Tauri-Windows-unsigned`. The workflow does not sign installers or publish a release. Release installers use the name `ACVPN-Setup-<version>.exe`.
 
 ### Windows code signing
 

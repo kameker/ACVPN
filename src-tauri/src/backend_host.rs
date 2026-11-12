@@ -101,7 +101,7 @@ impl BackendHost {
                 };
                 if matches!(
                     message.get("event").and_then(Value::as_str),
-                    Some("update" | "update-install" | "shutdown-error" | "notification")
+                    Some("update" | "shutdown-error" | "notification")
                 ) {
                     on_event(message);
                 } else if let Some(id) = message.get("id").and_then(Value::as_u64) {
