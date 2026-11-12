@@ -12,6 +12,7 @@
   "bundle": {
     "active": true,
     "targets": ["nsis"],
+    "windows": { "webviewInstallMode": { "type": "downloadBootstrapper", "silent": true } },
     "icon": ["../src/icon.ico"],
     "resources": {
       "../src/": "src/",
