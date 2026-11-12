@@ -9,7 +9,8 @@ const {createProxyManager,nativeOperation}=require('./windows-proxy');
 const {runServerChecks}=require('./check-servers');
 const {stopAndWait,createServerSwitcher}=require('./switch-server');
 const {serverKey,bestServer,addRecent}=require('./server-features');
-function createBackend({profile, safeStorage, clipboard, pickApplication, setAutostart, notify=()=>{}, onUpdate=()=>{}, updater=null, restoreAutostart=false, fetchImpl=globalThis.fetch, proxyOperation=nativeOperation, binaryPath=path.join(__dirname,'..','vendor','sing-box.exe')}) {
+function proxyListening(){return new Promise(resolve=>{const socket=net.connect(2080,'127.0.0.1');let done=false;const finish=result=>{if(done)return;done=true;socket.destroy();resolve(result);};socket.setTimeout(500);socket.once('connect',()=>finish(true));socket.once('error',()=>finish(false));socket.once('timeout',()=>finish(false));});}
+function createBackend({profile, safeStorage, clipboard, pickApplication, setAutostart, notify=()=>{}, onUpdate=()=>{}, updater=null, restoreAutostart=false, fetchImpl=globalThis.fetch, proxyOperation=nativeOperation, checkProxyListening=proxyListening, binaryPath=path.join(__dirname,'..','vendor','sing-box.exe')}) {
 let state, child=null, status='disconnected', started=null, timer, closing=false, proxyManager, ownsProxy=false, coreProblem=null, pingRun=null, isQuitting=false, switching=false, refreshRunning=false, appUpdates=null, updateTimer=null, installTimer=null; const logs=[];const stoppingCores=new Set();
 const defaults={groups:[],selected:null,rules:[],appRules:[],favorites:[],recent:{},settings:{theme:'dark',lang:'ru',autostart:false,autoconnect:false,systemProxy:true,interval:24,defaultRoute:'vpn',preferVerified:false}};
 const dataPath=()=>path.join(profile,'data.enc'); const runtimePath=()=>path.join(profile,'runtime.json');
@@ -47,6 +48,7 @@ async function start(){
  if(!safeStorage.isEncryptionAvailable())throw Error('Windows secure storage unavailable');
  try{state=fs.existsSync(dataPath())?JSON.parse(safeStorage.decryptString(fs.readFileSync(dataPath()))):structuredClone(defaults);state.settings={...defaults.settings,...state.settings};delete state.settings.tun;state.appRules=Array.isArray(state.appRules)?state.appRules:[];state.favorites=Array.isArray(state.favorites)?state.favorites:[];state.recent=state.recent&&typeof state.recent==='object'?state.recent:{};for(const server of state.groups.flatMap(g=>g.servers))if(server.certStatus==='checking')server.certStatus='unknown';}catch{throw Error('Cannot decrypt local data. Your existing data has not been overwritten.');}
  const proxyScript=path.join(__dirname,'windows-proxy.ps1');proxyManager=createProxyManager({safeStorage,journalPath:path.join(profile,'proxy-recovery.enc'),operation:(op,input)=>proxyOperation(op,input,proxyScript)});try{proxyManager.recover()}catch{throw Error('Could not restore Windows proxy settings; check other ACVPN instances');}removeRuntime();
+ try{const current=proxyOperation('read',undefined,proxyScript);if(current.enabled?.exists&&current.enabled.value===1&&current.server?.exists&&current.server.value==='127.0.0.1:2080'&&!(await checkProxyListening()))coreProblem='orphanProxy';}catch{log('Could not check Windows proxy settings');}
  if(restoreAutostart&&state.settings.autostart){try{setAutostart(true);}catch{log('Could not migrate Windows autostart');}}
  schedule();startAppUpdates();if(state.settings.autoconnect&&selected())setTimeout(()=>connect().catch(()=>log('Auto-connect failed')),1000);
  return snapshot();

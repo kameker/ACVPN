@@ -11,6 +11,30 @@ function create(profile, options = {}) {
   return createBackend({ profile, safeStorage, clipboard: {}, pickApplication: async () => null, setAutostart() {}, ...options });
 }
 
+test('startup warns when Windows points to an unreachable local proxy without changing it', async () => {
+  const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'acvpn-orphan-'));
+  const operations = [];
+  const proxyOperation = op => { operations.push(op); return { server: { exists: true, value: '127.0.0.1:2080' }, enabled: { exists: true, value: 1 }, hasPac: false }; };
+  const backend = create(profile, { proxyOperation, checkProxyListening: async () => false });
+  try {
+    await backend.start();
+    assert.equal((await backend.action('state')).coreProblem, 'orphanProxy');
+    assert.deepEqual(operations, ['read']);
+  } finally { backend.shutdown(); fs.rmSync(profile, { recursive: true, force: true }); }
+});
+
+test('startup does not warn when the proxy is disabled or listening', async () => {
+  for (const [enabled, listening] of [[0, false], [1, true]]) {
+    const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'acvpn-proxy-ok-'));
+    const backend = create(profile, {
+      proxyOperation: () => ({ server: { exists: true, value: '127.0.0.1:2080' }, enabled: { exists: true, value: enabled } }),
+      checkProxyListening: async () => listening,
+    });
+    try { await backend.start(); assert.equal((await backend.action('state')).coreProblem, null); }
+    finally { backend.shutdown(); fs.rmSync(profile, { recursive: true, force: true }); }
+  }
+});
+
 test('subscription device ID is sent only with consent and retained for refresh', async () => {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'acvpn-add-device-')); const requests = [];
   const fetchImpl = async (_url, options) => {
