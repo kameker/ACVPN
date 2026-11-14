@@ -14,7 +14,7 @@ ACVPN is a Windows application for connecting to your own servers and subscripti
 
 ## Installation and connection
 
-1. Download `ACVPN-Setup-2.0.4.exe` from [GitHub Releases](https://github.com/kameker/ACVPN/releases/latest) and run it. Windows may warn about an unknown publisher because the installer is unsigned.
+1. Download `ACVPN-Tauri-Setup-2.0.5.exe` from [GitHub Releases](https://github.com/kameker/ACVPN/releases/latest) and run it. Windows may warn about an unknown publisher because the installer is unsigned.
 2. Select **Add** and paste a configuration URI or an HTTPS subscription URL.
 3. Select a server and press the connection button.
 4. Press the button again to disconnect. Closing the window minimizes ACVPN to the system tray; use the tray menu to quit completely.
@@ -25,7 +25,7 @@ By default, ACVPN configures the Windows system proxy. Applications that use the
 
 On normal disconnect, ACVPN restores the previous proxy settings if another program has not changed them. In system proxy mode it starts a recovery helper and registers a separate Windows logon entry, even when the application's own autostart is disabled. The helper attempts recovery after the backend exits unexpectedly and again at the next user logon. If settings have changed externally, ACVPN retains the recovery record and asks whether to keep the current settings or restore the saved settings.
 
-When moving from the Electron edition, disconnect and exit the old app from its tray menu before starting the Tauri edition. Install 2.0.4 manually. The new app imports the encrypted profile into a separate directory without changing the old files; the old installation is not removed. If the old profile's encryption key is missing, ACVPN offers to create an empty profile. The old files remain untouched, but subscriptions must be added again unless the original key can be recovered.
+When moving from the Electron edition, disconnect and exit the old app from its tray menu before starting the Tauri edition. Install 2.0.5 manually. The new app imports the encrypted profile into a separate directory without changing the old files; the old installation is not removed. If the old profile's encryption key is missing, ACVPN offers to create an empty profile. The old files remain untouched, but subscriptions must be added again unless the original key can be recovered.
 
 ## Servers and subscriptions
 
@@ -42,6 +42,7 @@ Some providers require a device identifier. When adding a subscription, you can 
 - Supported URI types are VLESS, VMess (base64 JSON), Trojan, Shadowsocks (SIP002), and SOCKS5. Subscriptions can contain plain-text or base64 lists of URIs. Unsupported entries are skipped; an import with no supported entries is rejected.
 - For applicable links, VLESS Reality and TLS, TCP, WebSocket, and gRPC are supported. Not every provider-specific option is supported. Hysteria2, Shadowsocks plugins, and direct JSON, file, and QR-code imports are not implemented.
 - Website rules apply only to traffic reaching the local proxy, and domain rules include subdomains. Application rules match the full `.exe` path and take precedence over website rules. Select a running process or enter its path manually. Rule changes take effect after reconnecting.
+- **Ready-made exceptions** can load Russian categories from Loyalsoldier's [geosite.dat and geoip.dat](https://github.com/Loyalsoldier/v2ray-rules-dat). Use the all-Russia button to enable or disable every category; it downloads missing databases and keeps existing actions, defaulting new categories to direct. Open detailed settings to update databases, enable categories individually, or choose direct, proxy, or block. GeoIP matches IP addresses passed to the proxy; a domain destination is not automatically resolved just to apply this rule. Application rules come first, then manual site rules and enabled lists in the displayed order. Updates are manual; a failed update keeps the last working lists. Reconnect to apply changes.
 - The system proxy does not redirect all traffic: UDP and DNS may bypass it. A kill switch, leak protection, custom DNS settings, external IP checks, and automatic recovery after network loss are not implemented.
 - Existing Windows proxy exclusions and automatic proxy detection may affect routing. System proxy mode is rejected if Windows has a PAC URL configured.
 - The “proxy running” status means sing-box has started and its local port responds. It does not verify authentication, remote server availability, or the absence of leaks. The local proxy has no authentication and is accessible to other processes on the computer.

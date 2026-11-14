@@ -63,9 +63,11 @@ function network(value) {
  return {n,bits:Number(prefix??(family===4?32:128)),width:family===4?32:128};
 }
 function overlap(a,b) {const x=network(a),y=network(b);if(x&&y&&x.width===y.width){const bits=Math.min(x.bits,y.bits),shift=BigInt(x.width-bits);return (x.n>>shift)===(y.n>>shift);}if(x||y)return false;return a===b||a.endsWith('.'+b)||b.endsWith('.'+a);}
-function makeConfig(server,rules,defaultRoute,appRules=[]) {
+function makeConfig(server,rules,defaultRoute,appRules=[],presets=[]) {
  const mappings={direct:'direct',vpn:'proxy',block:'block'};
  const appRoutes=appRules.filter(r=>r.enabled).map(r=>{if(!Object.hasOwn(mappings,r.action))throw Error('Invalid action');return {process_path:[normalizeApplicationPath(r.value)],...(r.action==='block'?{action:'reject'}:{action:'route',outbound:mappings[r.action]})};});
- return {log:{disabled:true},inbounds:[{type:'mixed',tag:'local',listen:'127.0.0.1',listen_port:2080}],outbounds:[{...server.outbound,tag:'proxy'},{type:'direct',tag:'direct'}],route:{rules:[...appRoutes,...rules.filter(r=>r.enabled).map(r=>({...ruleValue(r.value),...(r.action==='block'?{action:'reject'}:{action:'route',outbound:mappings[r.action]})}))],final:defaultRoute==='direct'?'direct':'proxy'}};
+ const activePresets=presets.filter(r=>r.enabled);
+ const presetRoutes=activePresets.map(r=>{if(!Object.hasOwn(mappings,r.action))throw Error('Invalid action');return {rule_set:'preset-'+r.id,...(r.action==='block'?{action:'reject'}:{action:'route',outbound:mappings[r.action]})};});
+ return {log:{disabled:true},inbounds:[{type:'mixed',tag:'local',listen:'127.0.0.1',listen_port:2080}],outbounds:[{...server.outbound,tag:'proxy'},{type:'direct',tag:'direct'}],route:{rules:[...appRoutes,...rules.filter(r=>r.enabled).map(r=>({...ruleValue(r.value),...(r.action==='block'?{action:'reject'}:{action:'route',outbound:mappings[r.action]})})),...presetRoutes],...(activePresets.length?{rule_set:activePresets.map(r=>({type:'local',tag:'preset-'+r.id,format:'source',path:r.path}))}:{}),final:defaultRoute==='direct'?'direct':'proxy'}};
 }
 module.exports={parseLink,parseList,ruleValue,makeConfig,overlap};
