@@ -2,7 +2,7 @@
 
 **English** | [Русский](README.ru.md)
 
-ACVPN is a Windows application for connecting to your own servers and subscriptions through a local proxy. The Tauri edition uses Windows WebView2 for its interface, a bundled Node.js backend, and sing-box for connections. ACVPN does not provide servers or subscriptions; obtain them from a provider or set up your own.
+ACVPN is a Windows application for connecting to your own servers and subscriptions through a local proxy. The Tauri edition uses Windows WebView2 for its interface, a bundled Node.js backend, sing-box for routing, and Xray for XHTTP connections. ACVPN does not provide servers or subscriptions; obtain them from a provider or set up your own.
 
 ## Features
 
@@ -14,24 +14,24 @@ ACVPN is a Windows application for connecting to your own servers and subscripti
 
 ## Installation and connection
 
-1. Download `ACVPN-Tauri-Setup-2.0.5.exe` from [GitHub Releases](https://github.com/kameker/ACVPN/releases/latest) and run it. Windows may warn about an unknown publisher because the installer is unsigned.
+1. Download `ACVPN-Tauri-Setup-2.0.6.exe` from [GitHub Releases](https://github.com/kameker/ACVPN/releases/latest) and run it. Windows may warn about an unknown publisher because the installer is unsigned.
 2. Select **Add** and paste a configuration URI or an HTTPS subscription URL.
 3. Select a server and press the connection button.
 4. Press the button again to disconnect. Closing the window minimizes ACVPN to the system tray; use the tray menu to quit completely.
 
-The installer checks for Microsoft Edge WebView2 Runtime and downloads it if it is missing; this requires an internet connection. Node.js, sing-box, and the required sing-box library are included with ACVPN and do not need separate installation.
+The installer checks for Microsoft Edge WebView2 Runtime and downloads it if it is missing; this requires an internet connection. Node.js, sing-box, Xray, and the required sing-box library are included with ACVPN and do not need separate installation.
 
 By default, ACVPN configures the Windows system proxy. Applications that use the system settings can send traffic through it; applications that ignore those settings are not redirected automatically. Alternatively, disable system proxy mode in settings and configure an HTTP or SOCKS5 proxy at `127.0.0.1:2080` in the application you want to use.
 
 On normal disconnect, ACVPN restores the previous proxy settings if another program has not changed them. In system proxy mode it starts a recovery helper and registers a separate Windows logon entry, even when the application's own autostart is disabled. The helper attempts recovery after the backend exits unexpectedly and again at the next user logon. If settings have changed externally, ACVPN retains the recovery record and asks whether to keep the current settings or restore the saved settings.
 
-When moving from the Electron edition, disconnect and exit the old app from its tray menu before starting the Tauri edition. Install 2.0.5 manually. The new app imports the encrypted profile into a separate directory without changing the old files; the old installation is not removed. If the old profile's encryption key is missing, ACVPN offers to create an empty profile. The old files remain untouched, but subscriptions must be added again unless the original key can be recovered.
+When moving from the Electron edition, disconnect and exit the old app from its tray menu before starting the Tauri edition. Install 2.0.6 manually. The new app imports the encrypted profile into a separate directory without changing the old files; the old installation is not removed. If the old profile's encryption key is missing, ACVPN offers to create an empty profile. The old files remain untouched, but subscriptions must be added again unless the original key can be recovered.
 
 ## Servers and subscriptions
 
-The ping check measures the time to establish a direct TCP connection to each server. For servers using ordinary TLS, it also checks the certificate by connecting through the server to `www.cloudflare.com:443`; the check is visible to the VPN server and Cloudflare. Network errors and certificate errors are displayed separately; Reality, connections without TLS, and connections with certificate verification disabled have their own statuses. A verified certificate does not guarantee that a server works, and latency is not a speed measurement.
+The ping check measures the time to establish a direct TCP connection. You can check all servers, a subscription group, or one server and stop an ongoing check; unfinished servers keep their previous results. For servers using ordinary TLS, it also checks the certificate by connecting through the server to `www.cloudflare.com:443`; the check is visible to the VPN server and Cloudflare. Network errors and certificate errors are displayed separately; Reality, connections without TLS, and connections with certificate verification disabled have their own statuses. A verified certificate does not guarantee that a server works, and latency is not a speed measurement.
 
-By default, servers and favorites are sorted by ping: servers with measured latency and a verified certificate come first, followed by eligible servers without an ordinary TLS certificate; the remaining servers stay visible below. Country is inferred from the server name, not its IP address. Selecting another server while connected switches the connection to that server.
+By default, servers are grouped by subscription. When sorting by ping, servers remain in their subscription groups; within each group, servers with measured latency and a verified certificate come first, followed by eligible servers without an ordinary TLS certificate; the remaining servers stay visible below. Country is inferred from the server name, not its IP address. Selecting another server while connected switches the connection to that server.
 
 The refresh button updates subscriptions. Disconnect and wait for server checks to finish before refreshing. Individual subscriptions can be managed in the subscription sorting mode.
 
@@ -40,7 +40,7 @@ Some providers require a device identifier. When adding a subscription, you can 
 ## Routing and limitations
 
 - Supported URI types are VLESS, VMess (base64 JSON), Trojan, Shadowsocks (SIP002), and SOCKS5. Subscriptions can contain plain-text or base64 lists of URIs. Unsupported entries are skipped; an import with no supported entries is rejected.
-- For applicable links, VLESS Reality and TLS, TCP, WebSocket, and gRPC are supported. Not every provider-specific option is supported. Hysteria2, Shadowsocks plugins, and direct JSON, file, and QR-code imports are not implemented.
+- For applicable links, VLESS Reality and TLS, TCP, WebSocket, gRPC, and VLESS XHTTP over TLS are supported. XHTTP certificate checks are reported as unknown. Not every provider-specific option is supported. Hysteria2, Shadowsocks plugins, and direct JSON, file, and QR-code imports are not implemented.
 - Website rules apply only to traffic reaching the local proxy, and domain rules include subdomains. Application rules match the full `.exe` path and take precedence over website rules. Select a running process or enter its path manually. Rule changes take effect after reconnecting.
 - **Ready-made exceptions** can load Russian categories from Loyalsoldier's [geosite.dat and geoip.dat](https://github.com/Loyalsoldier/v2ray-rules-dat). Use the all-Russia button to enable or disable every category; it downloads missing databases and keeps existing actions, defaulting new categories to direct. Open detailed settings to update databases, enable categories individually, or choose direct, proxy, or block. GeoIP matches IP addresses passed to the proxy; a domain destination is not automatically resolved just to apply this rule. Application rules come first, then manual site rules and enabled lists in the displayed order. Updates are manual; a failed update keeps the last working lists. Reconnect to apply changes.
 - The system proxy does not redirect all traffic: UDP and DNS may bypass it. A kill switch, leak protection, custom DNS settings, external IP checks, and automatic recovery after network loss are not implemented.
@@ -52,7 +52,7 @@ Some providers require a device identifier. When adding a subscription, you can 
 
 Settings, configurations, and subscription URLs are stored in an encrypted `data.enc` file under `%APPDATA%\app.acvpn.tauri`. The Windows storage format is compatible with Electron `safeStorage` and protects its encryption key using Windows DPAPI. Configuration is passed to sing-box through standard input; while the app runs, data remains accessible to processes under the same account. ACVPN does not include analytics.
 
-HTTPS subscriptions are fetched from the supplied URL without redirects, with a 2 MB response limit. Application updates are installed manually: download the new installer from GitHub Releases, disconnect and exit ACVPN, then run it. The installer is unsigned.
+HTTPS subscriptions are fetched from the supplied URL without redirects, with a 2 MB response limit. If the Node.js network request fails on Windows, ACVPN retries with Windows curl; TLS verification remains enabled and the URL is passed through standard input. Application updates are installed manually: download the new installer from GitHub Releases, disconnect and exit ACVPN, then run it. The installer is unsigned.
 
 ## Development and building
 

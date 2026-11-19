@@ -19,7 +19,7 @@ async function unusedPort() {
   return new Promise((resolve,reject)=>{const server=net.createServer();server.once('error',reject);server.listen(0,'127.0.0.1',()=>{const port=server.address().port;server.close(error=>error?reject(error):resolve(port));});});
 }
 async function checkCertificate({server,binary,signal,target=DEFAULT_TARGET,timeoutMs=10000}) {
-  const kind=certificateKind(server);if(kind!=='eligible')return kind;
+  const kind=certificateKind(server);if(kind!=='eligible')return kind;if(server?.outbound?.transport?.type==='xhttp')return 'unknown';
   if(signal?.aborted)return 'unknown';
   let port;try{port=await unusedPort();}catch{return 'unknown';}
   if(signal?.aborted)return 'unknown';

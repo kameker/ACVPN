@@ -35,7 +35,8 @@ function parseLink(input) {
       if(sec==='reality') { if(!params.get('pbk')) throw Error('Reality public key is missing'); outbound.tls.reality={enabled:true,public_key:params.get('pbk'),short_id:params.get('sid')||''}; }
     }
     const transport=params.get('type') || 'tcp';
-    if(transport==='ws') outbound.transport={type:'ws',path:params.get('path')||'/',...(params.get('host')?{headers:{Host:params.get('host')}}:{})};
+    if(transport==='xhttp') {if(type!=='vless'||sec!=='tls'||outbound.flow||params.get('encryption')&&params.get('encryption')!=='none'||['1','true'].includes(params.get('allowInsecure'))||['1','true'].includes(params.get('insecure')))throw Error('Unsupported XHTTP security');let extra={};try{extra=JSON.parse(params.get('extra')||'{}')}catch{throw Error('Invalid XHTTP options')}if(!extra||typeof extra!=='object'||Array.isArray(extra)||Object.keys(extra).some(k=>k!=='xmux')||extra.xmux&&(!extra.xmux||typeof extra.xmux!=='object'||Array.isArray(extra.xmux)))throw Error('Unsupported XHTTP options');const mode=params.get('mode')||'auto';if(!['auto','stream-one','stream-up','packet-up'].includes(mode))throw Error('Unsupported XHTTP mode');outbound.transport={type:'xhttp',path:params.get('path')||'/',mode,...(params.get('host')?{host:params.get('host')}:{}) ,...(params.get('alpn')?{alpn:params.get('alpn').split(',')}:{}),...(extra.xmux?{xmux:extra.xmux}:{})};}
+    else if(transport==='ws') outbound.transport={type:'ws',path:params.get('path')||'/',...(params.get('host')?{headers:{Host:params.get('host')}}:{})};
     else if(transport==='grpc') outbound.transport={type:'grpc',service_name:params.get('serviceName')||params.get('path')||''};
     else if(!['tcp','none'].includes(transport)) throw Error('Unsupported transport: '+transport);
   }
@@ -63,11 +64,11 @@ function network(value) {
  return {n,bits:Number(prefix??(family===4?32:128)),width:family===4?32:128};
 }
 function overlap(a,b) {const x=network(a),y=network(b);if(x&&y&&x.width===y.width){const bits=Math.min(x.bits,y.bits),shift=BigInt(x.width-bits);return (x.n>>shift)===(y.n>>shift);}if(x||y)return false;return a===b||a.endsWith('.'+b)||b.endsWith('.'+a);}
-function makeConfig(server,rules,defaultRoute,appRules=[],presets=[]) {
+function makeConfig(server,rules,defaultRoute,appRules=[],presets=[],bridge=null) {
  const mappings={direct:'direct',vpn:'proxy',block:'block'};
  const appRoutes=appRules.filter(r=>r.enabled).map(r=>{if(!Object.hasOwn(mappings,r.action))throw Error('Invalid action');return {process_path:[normalizeApplicationPath(r.value)],...(r.action==='block'?{action:'reject'}:{action:'route',outbound:mappings[r.action]})};});
  const activePresets=presets.filter(r=>r.enabled);
  const presetRoutes=activePresets.map(r=>{if(!Object.hasOwn(mappings,r.action))throw Error('Invalid action');return {rule_set:'preset-'+r.id,...(r.action==='block'?{action:'reject'}:{action:'route',outbound:mappings[r.action]})};});
- return {log:{disabled:true},inbounds:[{type:'mixed',tag:'local',listen:'127.0.0.1',listen_port:2080}],outbounds:[{...server.outbound,tag:'proxy'},{type:'direct',tag:'direct'}],route:{rules:[...appRoutes,...rules.filter(r=>r.enabled).map(r=>({...ruleValue(r.value),...(r.action==='block'?{action:'reject'}:{action:'route',outbound:mappings[r.action]})})),...presetRoutes],...(activePresets.length?{rule_set:activePresets.map(r=>({type:'local',tag:'preset-'+r.id,format:'source',path:r.path}))}:{}),final:defaultRoute==='direct'?'direct':'proxy'}};
+ return {log:{disabled:true},inbounds:[{type:'mixed',tag:'local',listen:'127.0.0.1',listen_port:2080}],outbounds:[{...(bridge?{type:'socks',server:'127.0.0.1',server_port:bridge.port,version:'5',username:bridge.username,password:bridge.password}:server.outbound),tag:'proxy'},{type:'direct',tag:'direct'}],route:{rules:[...appRoutes,...rules.filter(r=>r.enabled).map(r=>({...ruleValue(r.value),...(r.action==='block'?{action:'reject'}:{action:'route',outbound:mappings[r.action]})})),...presetRoutes],...(activePresets.length?{rule_set:activePresets.map(r=>({type:'local',tag:'preset-'+r.id,format:'source',path:r.path}))}:{}),final:defaultRoute==='direct'?'direct':'proxy'}};
 }
 module.exports={parseLink,parseList,ruleValue,makeConfig,overlap};

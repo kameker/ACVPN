@@ -18,6 +18,8 @@
       "../src/": "src/",
       "sidecar/": "src-tauri/sidecar/",
       "../vendor/sing-box.exe": "vendor/sing-box.exe",
+      "../vendor/xray.exe": "vendor/xray.exe",
+      "../vendor/XRAY-LICENSE.txt": "vendor/XRAY-LICENSE.txt",
       "../vendor/libcronet.dll": "vendor/libcronet.dll",
       "../vendor/SING-BOX-LICENSE.txt": "vendor/SING-BOX-LICENSE.txt",
       "../LICENSE": "LICENSE",
