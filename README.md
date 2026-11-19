@@ -14,7 +14,7 @@ ACVPN is a Windows application for connecting to your own servers and subscripti
 
 ## Installation and connection
 
-1. Download `ACVPN-Tauri-Setup-2.0.6.exe` from [GitHub Releases](https://github.com/kameker/ACVPN/releases/latest) and run it. Windows may warn about an unknown publisher because the installer is unsigned.
+1. Download `ACVPN-Tauri-Setup-2.0.7.exe` from [GitHub Releases](https://github.com/kameker/ACVPN/releases/latest) and run it. Windows may warn about an unknown publisher because the installer is unsigned.
 2. Select **Add** and paste a configuration URI or an HTTPS subscription URL.
 3. Select a server and press the connection button.
 4. Press the button again to disconnect. Closing the window minimizes ACVPN to the system tray; use the tray menu to quit completely.
@@ -25,7 +25,7 @@ By default, ACVPN configures the Windows system proxy. Applications that use the
 
 On normal disconnect, ACVPN restores the previous proxy settings if another program has not changed them. In system proxy mode it starts a recovery helper and registers a separate Windows logon entry, even when the application's own autostart is disabled. The helper attempts recovery after the backend exits unexpectedly and again at the next user logon. If settings have changed externally, ACVPN retains the recovery record and asks whether to keep the current settings or restore the saved settings.
 
-When moving from the Electron edition, disconnect and exit the old app from its tray menu before starting the Tauri edition. Install 2.0.6 manually. The new app imports the encrypted profile into a separate directory without changing the old files; the old installation is not removed. If the old profile's encryption key is missing, ACVPN offers to create an empty profile. The old files remain untouched, but subscriptions must be added again unless the original key can be recovered.
+When moving from the Electron edition, disconnect and exit the old app from its tray menu before starting the Tauri edition. Install 2.0.7 manually. The new app imports the encrypted profile into a separate directory without changing the old files; the old installation is not removed. If the old profile's encryption key is missing, ACVPN offers to create an empty profile. The old files remain untouched, but subscriptions must be added again unless the original key can be recovered.
 
 ## Servers and subscriptions
 
@@ -33,7 +33,7 @@ The ping check measures the time to establish a direct TCP connection. You can c
 
 By default, servers are grouped by subscription. When sorting by ping, servers remain in their subscription groups; within each group, servers with measured latency and a verified certificate come first, followed by eligible servers without an ordinary TLS certificate; the remaining servers stay visible below. Country is inferred from the server name, not its IP address. Selecting another server while connected switches the connection to that server.
 
-The refresh button updates subscriptions. Disconnect and wait for server checks to finish before refreshing. Individual subscriptions can be managed in the subscription sorting mode.
+The subscription check in the add dialog or a saved group reports recognized and skipped connection types without replacing servers. It checks format only, not server availability. The group header shows the last successful update, TCP-reachable count and skipped entries; groups can be collapsed, renamed and reordered. The refresh button updates subscriptions. Disconnect and wait for server checks to finish before refreshing. Individual subscriptions can be managed in the subscription sorting mode.
 
 Some providers require a device identifier. When adding a subscription, you can opt in to sending a persistent random `X-HWID`, the OS name and version, and a device name in the `OS-username` format for that subscription URL. The provider may count this as a separate device, and the displayed name depends on the provider. The identifier and permissions are stored locally in encrypted form. If a provider returns only an “App not supported” placeholder, it does not replace saved servers.
 

@@ -42,14 +42,16 @@ function parseLink(input) {
   }
   return {id:randomUUID(),name:String(name).slice(0,120),server,port,outbound};
 }
-function parseList(text) {
+function parseList(text,{allowEmpty=false}={}) {
   let body=text.trim(); if(!body) throw Error('Empty subscription');
-  if(!/^(vless|vmess|trojan|ss|socks5?):\/\//im.test(body)) body=b64(body).trim();
-  const lines=body.split(/\r?\n/).map(x=>x.trim()).filter(Boolean); const servers=[]; let skipped=0;
-  for(const line of lines) { try { servers.push(parseLink(line)); } catch { skipped++; } }
+  if(/^\s*(?:<!doctype\s+html|<html|<head|<body)/i.test(body))throw Error('Subscription returned HTML');
+  if(!/^[a-z][a-z0-9+.-]*:\/\//im.test(body)) {if(!/^[A-Za-z0-9+/_=\-\s]+$/.test(body))throw Error('Unsupported subscription format');body=b64(body).trim();}
+  if(/^\s*(?:<!doctype\s+html|<html|<head|<body)/i.test(body))throw Error('Subscription returned HTML');
+  const lines=body.split(/\r?\n/).map(x=>x.trim()).filter(Boolean); const servers=[]; let skipped=0;const skippedTypes={};
+  for(const line of lines) { try { servers.push(parseLink(line)); } catch { skipped++;const match=line.match(/^([a-z][a-z0-9+.-]*):\/\//i);let kind=match?match[1].toLowerCase():'other';if(!['vless','vmess','trojan','ss','socks','socks5','hysteria2','hy2','tuic','wireguard'].includes(kind))kind='other';if(kind==='vless'){try{const transport=new URL(line).searchParams.get('type');if(transport==='xhttp')kind='vless/xhttp'}catch{}}skippedTypes[kind]=(skippedTypes[kind]||0)+1; } }
   if(servers.length&&servers.every(s=>/app\s+not\s+supported/i.test(s.name)&&['0.0.0.0','::','127.0.0.1','localhost'].includes(s.server.toLowerCase())))throw Error('Subscription provider does not support this client');
-  if(!servers.length) throw Error('No supported configurations found');
-  return {servers,skipped};
+  if(!servers.length&&!allowEmpty) throw Error('No supported configurations found');
+  return {servers,skipped,skippedTypes};
 }
 function ruleValue(value) {
  const v=value.trim().toLowerCase(); const [ip,bits,...extra]=v.split('/'); const family=net.isIP(ip);
