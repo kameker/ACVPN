@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-test('standalone backend imports servers and saves favorites without Electron', { skip: process.platform !== 'win32' }, async () => {
+test('standalone backend imports servers and saves favorites', { skip: process.platform !== 'win32' }, async () => {
   const { createBackend } = require('../src/backend');
   const { createSafeStorage } = require('../src-tauri/sidecar/safe-storage');
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'acvpn-standalone-'));
